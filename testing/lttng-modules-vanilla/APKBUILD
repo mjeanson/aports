@@ -1,0 +1,69 @@
+# Contributor: 
+# Maintainer: 
+_usname=lttng-modules
+_flavor=${FLAVOR:-vanilla}
+_name=$_usname-$_flavor
+
+_kpkg=linux-$_flavor
+_kver=4.4.13
+_kpkgrel=0
+
+_usver=2.8.0
+
+_mypkgrel=0
+
+_kernelver=$_kver-r$_kpkgrel
+_abi_release=${_kver}-${_kpkgrel}-${_flavor}
+
+pkgname=$_name
+pkgver=$_kver
+pkgrel=$(($_kpkgrel + $_mypkgrel))
+pkgdesc="LTTng 2.0 kernel tracer"
+url="http://lttng.org"
+arch="all"
+license="GPL"
+depends=""
+depends_dev=""
+makedepends="linux-${_flavor}-dev"
+install=""
+subpackages=""
+source="http://lttng.org/files/$_usname/$_usname-$_usver.tar.bz2"
+
+_builddir=$srcdir/$_usname-$_usver
+
+prepare() {
+	local i
+	# verify the kernel version
+	(cd $startdir
+	if [ -f ../../main/linux-${_flavor}/APKBUILD ]; then
+		. ../../main/linux-${_flavor}/APKBUILD
+		[ "$_kver" != "$pkgver" ] \
+			&& die "please update _kver to $pkgver"
+		[ "$_kpkgrel" != "$pkgrel" ] \
+			&& die "please update _kpkgrel to $pkgrel"
+	else
+		die "could not determine kernel flavor: linux-${_flavor}"
+	fi
+	return 0) || return 1
+
+
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	KERNELDIR="/lib/modules/${_kver}/build" make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	KERNELDIR="/lib/modules/${_kver}/build" make INSTALL_MOD_PATH="$pkgdir" modules_install || return 1
+}
+md5sums="310029241e50c67c19236e82b68c56b3  lttng-modules-2.8.0.tar.bz2"
+sha256sums="b067f8a9c101dc244170ae5b66fc1d2f0547448162080a00f2a1df3701e63d29  lttng-modules-2.8.0.tar.bz2"
+sha512sums="760a4417ca6113501f99177eded3dfdf39477a8978894d414c3e2f49c1e86716dc7a076d43f67b3fffb52e1f05ef1bc2671c0e30cfe0cead41c97a8ac1488d8c  lttng-modules-2.8.0.tar.bz2"
