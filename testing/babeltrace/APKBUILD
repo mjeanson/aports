@@ -2,16 +2,16 @@
 # Maintainer: Michael Jeanson <mjeanson@efficios.com>
 pkgname=babeltrace
 pkgver=1.4.0
-pkgrel=1
+pkgrel=2
 pkgdesc="a trace converter and read/write library"
 url="https://www.efficios.com/babeltrace"
 arch="all"
 license="MIT"
 depends=""
 depends_dev="glib-dev"
-makedepends="$depends_dev popt-dev util-linux-dev bash perl"
+makedepends="$depends_dev popt-dev util-linux-dev bash perl swig python3-dev"
 install=""
-subpackages="$pkgname-dev $pkgname-doc"
+subpackages="$pkgname-dev $pkgname-doc py3-$pkgname:py3"
 source="https://www.efficios.com/files/$pkgname/$pkgname-$pkgver.tar.bz2"
 
 builddir="$srcdir/$pkgname-$pkgver"
@@ -22,12 +22,17 @@ build() {
 	# This package uses _init functions to initialise extensions. With
 	# --as-needed this will not work.
 	export LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+
+	export PYTHON="python3"
+	export PYTHON_CONFIG="python3-config"
+
 	./configure \
 		--build=$CBUILD \
 		--host=$CHOST \
 		--prefix=/usr \
 		--disable-static \
 		--disable-debug-info \
+		--enable-python-bindings \
 		|| return 1
 	make V=1 || return 1
 	make check || return 1
@@ -37,6 +42,14 @@ package() {
 	cd "$builddir"
 	make DESTDIR="$pkgdir" install || return 1
 	install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+}
+
+py3() {
+	pkgdesc="Babeltrace bindings for Python3"
+	depends="python3"
+
+	mkdir -p "$subpkgdir"/usr/lib/python3.5
+	mv "$pkgdir"/usr/lib/python3.5/* "$subpkgdir"/usr/lib/python3.5
 }
 
 md5sums="fa99064048af5c9c6ff00e489ac809c2  babeltrace-1.4.0.tar.bz2"
