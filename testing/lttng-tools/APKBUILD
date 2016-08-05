@@ -2,7 +2,7 @@
 # Maintainer: Michael Jeanson <mjeanson@efficios.com>
 pkgname=lttng-tools
 pkgver=2.8.0
-pkgrel=0
+pkgrel=1
 pkgdesc="LTTng 2.0 control and utility programs"
 url="https://lttng.org"
 arch="all"
@@ -10,9 +10,9 @@ license="GPL2"
 depends="babeltrace"
 depends_dev="popt-dev libxml2-dev userspace-rcu-dev lttng-ust-dev kmod-dev
 	util-linux-dev"
-makedepends="$depends_dev bash grep coreutils automake autoconf"
+makedepends="$depends_dev bash grep coreutils automake autoconf python3-dev swig"
 install=""
-subpackages="$pkgname-dev $pkgname-doc"
+subpackages="$pkgname-dev $pkgname-doc py3-lttng:py3"
 source="https://lttng.org/files/$pkgname/$pkgname-$pkgver.tar.bz2
 	0000-add-missing-test-script.patch
 	0001-Tests-Make-warn_processes.sh-more-portable.patch
@@ -36,6 +36,9 @@ prepare() {
 build() {
 	cd "$builddir"
 
+	export PYTHON="python3"
+	export PYTHON_CONFIG="python3-config"
+
 	unset LDFLAGS
 	./configure \
 		--build=$CBUILD \
@@ -43,6 +46,7 @@ build() {
 		--prefix=/usr \
 		--sysconfdir=/etc \
 		--localstatedir=/var \
+		--enable-python-bindings \
 		|| return 1
 	make V=1 || return 1
 	make -j1 check || return 1
@@ -55,6 +59,14 @@ package() {
 	mkdir -p "$pkgdir"/usr/share/licenses/$pkgname
 	mv "$pkgdir"/usr/share/doc/$pkgname/LICENSE \
 		"$pkgdir"/usr/share/licenses/$pkgname/
+}
+
+py3() {
+	pkgdesc="LTTng bindings for Python3"
+	depends="python3"
+
+	mkdir -p "$subpkgdir"/usr/lib/python3.5
+	mv "$pkgdir"/usr/lib/python3.5/* "$subpkgdir"/usr/lib/python3.5
 }
 
 md5sums="0adcf00a70db9b99e0dc43475adba801  lttng-tools-2.8.0.tar.bz2
